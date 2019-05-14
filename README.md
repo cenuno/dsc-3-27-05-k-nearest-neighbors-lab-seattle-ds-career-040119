@@ -19,7 +19,6 @@ We'll begin this lab by creating our classifier.  To keep things simple, we'll b
 ```python
 from scipy.spatial.distance import euclidean as euc
 import numpy as np
-np.random.seed(0)
 ```
 
 Great! Now, we'll need to define our `KNN` class. Since we don't need to do anything at initialization, we don't need to modify the `__init__` method at all.
@@ -28,6 +27,16 @@ In the cell below:
 
 * Create an class called `KNN`.
 * This class should contain two empty methods--`fit`, and `predict`. (Set the body of both of these methods to `pass`)
+
+
+```python
+class KNN(object):
+    def fit(self):
+        pass
+    
+    def predict(self):
+        pass
+```
 
 ## Completing the `fit` Method
 
@@ -44,7 +53,8 @@ In the cell below, complete the `fit` method.
 
 ```python
 def fit(self, X_train, y_train):
-    pass
+    self.X_train = X_train
+    self.y_train = y_train
     
 # This line updates the knn.fit method to point to the function we've just written
 KNN.fit = fit
@@ -66,7 +76,23 @@ In the cell below, complete the `_get_distances()` function. This function shoul
 
 ```python
 def _get_distances(self, x):
-    pass
+    """
+    Calculate the Euclidean distance between the input array and every other vector in our training set
+    """
+    # creating custom dtype of each tuple, 
+    # where each element is named on the left hand side and
+    # the type of each element is specified on the right hand side
+    # see more: https://docs.scipy.org/doc/numpy/user/basics.rec.html#structured-datatype-creation
+    custom_dtype = np.dtype([("index", "int"), ("distance", "float64")])
+    
+    distances = np.zeros(len(self.X_train), dtype=custom_dtype)
+    
+    for ind, val in enumerate(self.X_train):
+        dist_to_val = euc(x, val)
+        distances[ind] = (ind, dist_to_val)
+        
+    return distances
+
 
 # This line attaches the function we just created as a method to our KNN class.
 KNN._get_distances = _get_distances
@@ -88,7 +114,11 @@ In the cell below, complete the `_get_k_nearest` function.  This function should
 
 ```python
 def _get_k_nearest(self, dists, k):
-    pass
+    """
+    Identifiy the K nearest neighbors to the vector we want to predict
+    """
+    dists.sort(order="distance")
+    return dists[:k]
 
 # This line attaches the function we just created as a method to our KNN class.
 KNN._get_k_nearest = _get_k_nearest
@@ -105,7 +135,14 @@ Complete the `_get_label_prediction()` function in the cell below. This function
 
 ```python
 def _get_label_prediction(self, k_nearest):
-    pass
+    """
+    Identify which label the majority of the K nearest neighbors share
+    """
+    k_nearest_list_index = list(k_nearest["index"])
+    labels = [self.y_train[i] for i in k_nearest_list_index]
+    counts = np.bincount(labels)
+    
+    return np.argmax(counts)
 
 # This line attaches the function we just created as a method to our KNN class.
 KNN._get_label_prediction = _get_label_prediction
@@ -141,7 +178,16 @@ Follow these instructions to complete the `predict()` method in the cell below!
 
 ```python
 def predict(self, X_test, k=3):
-    pass
+    preds = []
+    # Iterate through each item in X_test
+    for vector in X_test:
+        # Get distances between each vector in X_test and every vector in in X_train
+        dists = self._get_distances(vector)
+        k_nearest = self._get_k_nearest(dists, k)
+        predicted_label = self._get_label_prediction(k_nearest)
+        preds.append(predicted_label)
+        
+    return preds
         
 KNN.predict = predict
 ```
@@ -165,36 +211,46 @@ data = iris.data
 target = iris.target
 ```
 
+    /Users/cristiannuno/ENTER/lib/python3.5/site-packages/sklearn/utils/fixes.py:313: FutureWarning: numpy not_equal will not check object identity in the future. The comparison did not return the same result as suggested by the identity (`is`)) and will change.
+      _nan_object_mask = _nan_object_array != _nan_object_array
+
+
 Now, you'll need to use `train_test_split` to split our training data into training and testing sets. Pass in the `data`, the `target`, and set a `test_size` of `0.25`.
 
 
 ```python
-X_train, X_test, y_train, y_test = None
+X_train, X_test, y_train, y_test = train_test_split(data,
+                                                    target,
+                                                    test_size=0.25,
+                                                    random_state=2019)
 ```
 
 Now, instantiate a knn object, and `fit` it to the data in `X_train` and the labels in `y_train`.
 
 
 ```python
-knn = None
+knn = KNN()
+knn.fit(X_train, y_train)
 ```
 
 Now, we'll create some predictions on our testing data.  In the cell below, use the `.predict()` method to generate predictions for the data stored in `X_test`.
 
 
 ```python
-preds = None
+preds = knn.predict(X_test)
 ```
 
 And now, for the moment of truth! Let's test the accuracy of our predictions. In the cell below, complete the call to `accuracy_score` by passing in `y_test` and our `preds`!
 
 
 ```python
-print("Testing Accuracy: {}".format(accuracy_score(None, None)))
-# Expected Output: Testing Accuracy: 0.9736842105263158
+print("Testing Accuracy: {}".format(accuracy_score(y_test, preds)))
 ```
 
-Over 97% accuracy! Not bad for a handwritten machine learning classifier!
+    Testing Accuracy: 1.0
+
+
+100% accuracy is dangerous. Need to test this handwritten machine learning classifier with methods in other modules!
 
 ## Summary
 
