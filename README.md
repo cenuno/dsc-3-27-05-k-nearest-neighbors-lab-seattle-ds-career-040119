@@ -1,201 +1,437 @@
 
-# K-Nearest Neighbors - Lab
+# Annotated K-Nearest Neighbors - Lab
 
 ## Introduction
 
-In this lesson, we'll build a simple version of a **_K-Nearest Neigbors Classifier_** from scratch, and train it to make predictions on a dataset!
+In this lesson, we'll walkthrough the key components to build a simple version of a **_K-Nearest Neigbors Classifier_** from scratch.
 
 ## Objectives
 
 You will be able to:
 
-* Implement a basic KNN algorithm from scratch
+* Understand how to implement a basic KNN algorithm from scratch
 
-## Getting Started
+In order to build our KNN Classifier, we're going to import the [**_Iris Dataset_**](https://gist.github.com/curran/a08a1080b88344b0c8a7). 
 
-We'll begin this lab by creating our classifier.  To keep things simple, we'll be using a helper function from the scipy library to calcluate euclidean distance for us--specifically, the `euclidean()` function from the `scipy.spatial.distance` module. Import this function in the cell below.
+![iris meme](iris_meme.jpeg)
+
+> This famous (Fisher's or Anderson's) `iris` data set gives the measurements in centimeters of the variables sepal length and width and petal length and width, respectively, for 50 flowers from each of 3 species of iris. The species are Iris setosa, versicolor, and virginica. - [R Documentation](https://stat.ethz.ch/R-manual/R-devel/library/datasets/html/iris.html)
+
+Using the length and width of both petals and sepals, we're going to use our KNN Classifier to predict the species of a small subset of `iris` records.
+
 
 
 ```python
 from scipy.spatial.distance import euclidean as euc
 import numpy as np
 np.random.seed(0)
-```
-
-Great! Now, we'll need to define our `KNN` class. Since we don't need to do anything at initialization, we don't need to modify the `__init__` method at all.
-
-In the cell below:
-
-* Create an class called `KNN`.
-* This class should contain two empty methods--`fit`, and `predict`. (Set the body of both of these methods to `pass`)
-
-## Completing the `fit` Method
-
-Recall from our previous lesson on KNN that when "fitting" a KNN classifier, all we're really doing is storing the points and their corresponding labels. There's no actual "fitting" involved here, since all we can do is store the data so that we can use it to calculate the nearest nighbors when the `predict` method is called.
-
-Our inputs for this function should be:
-
-* `self`, since this will be an instance method inside the `KNN` class.
-* `X_train`--A 2-dimensional array. Each of the internal arrays represents a _vector_ for a given point in space. 
-* `y_train`--the corresponding labels for each vector in `X_train`. The label at `y_train[0]` is the label that corresponds to the vector at `X_train[0]`, and so on. 
-
-In the cell below, complete the `fit` method.
-
-
-```python
-def fit(self, X_train, y_train):
-    pass
-    
-# This line updates the knn.fit method to point to the function we've just written
-KNN.fit = fit
-```
-
-### Helper Functions
-
-Next, we'll write two helper functions to make things easier for us when completing the `predict` function. The first helper function we'll write return an array containing the distance between a point we pass in and every point inside of `X_train`. 
-
-In the cell below, complete the `_get_distances()` function. This function should:
-
-* Take in two arguments: `self` and `x`
-* Create an empty array to hold all the distances we're going to calculate
-* Enumerate through every item in `self.X_train`. For each item: 
-    * Use the `euc()` function we imported to get the distance between x and the current point from `X_train`.
-    * Create a tuple containing the index and the distance (in that order!) and append it to our `distances` array.
-* Return the `distances` array when a distance has been generated for each item in `self.X_train`.
-
-
-```python
-def _get_distances(self, x):
-    pass
-
-# This line attaches the function we just created as a method to our KNN class.
-KNN._get_distances = _get_distances
-```
-
-Great! The second big challenge in a `predict` method is getting the indices of the k-nearest points. To keep our coming `predict` method nice and clean, we'll abstract this functionality into a helper method called `_get_k_nearest`.  
-
-In the cell below, complete the `_get_k_nearest` function.  This function should:
-
-* Take in 3 arguments:
-    * `self`
-    * `dists`, an array of tuples containing (index, distance), which will be output from the `_get_distances` method. 
-    * `k`, the number of nearest neighbors we want to return.
-* Sort our `dists` array by distances values, which are the second element in each tuple
-* Return the first `k` tuples from then (now sorted) `dists` array.
-
-**_Hint:_** To easily sort on the second item in the tuples contained within the `dists` array, use the `sorted` function and pass in lambda for the `key=` parameter. To sort on the second element of each tuple, we can just use `key=lambda x: x[1]`!
-
-
-```python
-def _get_k_nearest(self, dists, k):
-    pass
-
-# This line attaches the function we just created as a method to our KNN class.
-KNN._get_k_nearest = _get_k_nearest
-```
-
-Now, we have helper functions to help us get the distances, and then get the k-nearest neighbors based on those distances. The final helper function we'll create will help us get the labels that correspond to each of the k-nearest point, and return the class that occurs the most. 
-
-Complete the `_get_label_prediction()` function in the cell below. This function should:
-
-* Create a list containing the labels from `self.y_train` for each index in `k_nearest` (remember, each item in `k_nearest` is a tuple, and the index is stored as the first item in each tuple)
-* Get the total counts for each label (use `np.bincount()` and pass in the label array created in the previous step)
-* Get the index of the label with the highest overall count in counts (use `np.argmax()` for this, and pass in the counts created in the previous step).
-
-
-```python
-def _get_label_prediction(self, k_nearest):
-    pass
-
-# This line attaches the function we just created as a method to our KNN class.
-KNN._get_label_prediction = _get_label_prediction
-```
-
-Great! Now, we need to complete the `predict` method. This will be much simpler, now that we have some 
-
-## Completing the `predict` Method
-
-This method does all the heavy lifting for KNN, so this will be a bit more complex than our `fit` method. Let's examine how this method should work, so that we'll have a better idea of how to write it.
-
-1. The function takes in an array of vectors that we want predictions for.
-1. For each vector that we want to make a prediction for: 
-    1a. The classifier calculates the distance between that vector and every other vector in our training set. 
-    1b. The classifier identifies the K nearest vectors to the vector we want a prediction for.
-    1c. The classifier determines which label the majority of the K nearest neighbors share, and appends this prediction to an array we will output. The index of the prediction in this array should be the same as the index of the point that it corresponds to (e.g. `pred[0]` is the prediction for `X_test[0]`).
-2. Once predictions have been generated for every vector in question, return the array of predictions. 
-
-This tells us a few things about what our `predict` function will need to be able to do:
-
-* In addition to `self`, our `predict` function should take in two arguments: 
-    * `X_test`, the points we want to classify
-    * `k`, which specifies the number of neighbors we should use to make the classification.  We'll set `k=3` as a default, but allow the user to update it if they choose.
-* Our method will need to iterate through every item in `X_test`. For each item:
-    * Calculate the distance to all points in `X_train` by using our `_get_distances()` helper method we created.
-    * Find the k-nearest points in `X_train` by using the `_get_k_nearest()` helper method we created
-    * Use the index values contained within the tuples returned by `_get_k_nearest()` to get the corresponding labels for each of the nearest points. 
-    * Determine which class is most represented in these labels and treat that as the prediction for this point. Append the prediction to `preds`.
-* Once a prediction has been generated for every item in `X_test`, return `preds`
-
-Follow these instructions to complete the `predict()` method in the cell below!
-
-
-```python
-def predict(self, X_test, k=3):
-    pass
-        
-KNN.predict = predict
-```
-
-Great! Now, let's try out our new KNN classifier on a sample dataset to see how well it works!
-
-## Testing Our KNN Classifier
-
-In order to test the performance of our model, we're going to import the **_Iris Dataset_**. Specifically, we'll use the `load_iris` function, which can be found inside of the `sklearn.datasets` module. We'll then call this function, and use the object it returns. We'll also import `train_test_split` from `sklearn.model_selection`, as well as `accuracy_score` from `sklearn.metrics`.  Note that there are **_3 classes_** in the Iris Dataset, making this a multicategorical classification problem. This means that we can't use evaluation metrics that are meant for binary classification problems. For this, we'll just stick to accuracy. 
-
-Run the cell below to import everything we'll need from sklearn to test our model. 
-
-
-```python
 from sklearn.datasets import load_iris
 from sklearn.model_selection import train_test_split
 from sklearn.metrics import accuracy_score
 
 iris = load_iris()
-data = iris.data
-target = iris.target
+data = iris["data"]
+target = iris["target"]
 ```
 
-Now, you'll need to use `train_test_split` to split our training data into training and testing sets. Pass in the `data`, the `target`, and set a `test_size` of `0.25`.
+    /Users/cristiannuno/ENTER/lib/python3.5/site-packages/sklearn/utils/fixes.py:313: FutureWarning: numpy not_equal will not check object identity in the future. The comparison did not return the same result as suggested by the identity (`is`)) and will change.
+      _nan_object_mask = _nan_object_array != _nan_object_array
+
+
+As we can see, `data` has 4-columns, one for each type of measurement.
 
 
 ```python
-X_train, X_test, y_train, y_test = None
+data[:5]
 ```
 
-Now, instantiate a knn object, and `fit` it to the data in `X_train` and the labels in `y_train`.
+
+
+
+    array([[ 5.1,  3.5,  1.4,  0.2],
+           [ 4.9,  3. ,  1.4,  0.2],
+           [ 4.7,  3.2,  1.3,  0.2],
+           [ 4.6,  3.1,  1.5,  0.2],
+           [ 5. ,  3.6,  1.4,  0.2]])
+
+
+
+However, `target` has numerical values of `0`, `1`, and `2` to identify the `species` of each flower:
+
+* 0 = setosa
+* 1 = versicolor
+* 2 = virginica
 
 
 ```python
-knn = None
+target[:5]
 ```
 
-Now, we'll create some predictions on our testing data.  In the cell below, use the `.predict()` method to generate predictions for the data stored in `X_test`.
+
+
+
+    array([0, 0, 0, 0, 0])
+
+
+
+Now, you'll need to use `train_test_split()` to split our training data into training and testing sets. Pass in the `data`, the `target`, a `test_size` of 0.25, and `random_state` of 2019 for reproducibility.
 
 
 ```python
-preds = None
+X_train, X_test, y_train, y_test = train_test_split(data,
+                                                    target,
+                                                    test_size=0.25,
+                                                    random_state=2019)
 ```
 
-And now, for the moment of truth! Let's test the accuracy of our predictions. In the cell below, complete the call to `accuracy_score` by passing in `y_test` and our `preds`!
+## Calculating distance
+
+Each item in `X_test` is a vector (one row from the original `data` array). Our current goal is to calculate the [Euclidean distance](https://docs.scipy.org/doc/scipy/reference/generated/scipy.spatial.distance.euclidean.html#scipy.spatial.distance.euclidean) between each item in `X_test` and every vector in `X_train`.
 
 
 ```python
-print("Testing Accuracy: {}".format(accuracy_score(None, None)))
-# Expected Output: Testing Accuracy: 0.9736842105263158
+X_test[0]
 ```
 
-Over 97% accuracy! Not bad for a handwritten machine learning classifier!
+
+
+
+    array([ 4.4,  3.2,  1.3,  0.2])
+
+
+
+
+```python
+X_train[0]
+```
+
+
+
+
+    array([ 4.3,  3. ,  1.1,  0.1])
+
+
+
+
+```python
+euc(X_test[0], X_train[0])
+```
+
+
+
+
+    0.31622776601683816
+
+
+
+While we could build an empty list and append each result from `euc()` inside of the list, I wanted to try it using an empty numpy array instead!
+
+### Introducing structured arrays
+
+> Structured arrays are ndarrays whose datatype is a composition of simpler datatypes organized as a sequence of named [fields](https://docs.scipy.org/doc/numpy/glossary.html#term-field).
+
+> Each field within a structured datatype has a name, a datatype, and a byte offset within the structure. Structured datatypes may be created using the function [`numpy.dtype()`](https://docs.scipy.org/doc/numpy/reference/generated/numpy.dtype.html#numpy.dtype).
+
+While there are four [Data Types](https://docs.scipy.org/doc/numpy/reference/arrays.dtypes.html#arrays-dtypes-constructing), we'll only be talking about a list of tuples (one tuple per field).
+
+#### List of tuples in an array
+> Each tuple has the form (`fieldname`, `datatype`, `shape`) where `shape` is optional. `fieldname` is a string (or tuple if titles are used, see Field Titles below), `datatype` may be any object convertible to a datatype, and `shape` is a tuple of integers specifying subarray shape.
+
+The newly created `custom_dtype` specifies a `datatype` that is a list of tuples, with the first element an integer named "index" and the second element a float named "distance".
+
+
+```python
+custom_dtype = np.dtype([("index", "int"), ("distance", "float64")])
+custom_dtype
+```
+
+
+
+
+    dtype([('index', '<i8'), ('distance', '<f8')])
+
+
+
+Unlike an empty list, an [empty numpy array](https://docs.scipy.org/doc/numpy/reference/generated/numpy.zeros.html) **requires** us to know the final length of the object prior to creating it.
+
+
+```python
+empty_array = np.zeros(4, dtype=custom_dtype)
+empty_array
+```
+
+
+
+
+    array([(0, 0.0), (0, 0.0), (0, 0.0), (0, 0.0)], 
+          dtype=[('index', '<i8'), ('distance', '<f8')])
+
+
+
+To reassign elements in an array, we need to index the array and supply the new information on the right hand side.
+
+
+```python
+empty_array[0] = (0, 2.2)
+empty_array[1] = (1, 6.5)
+empty_array[2] = (2, 1.1)
+empty_array[3] = (3, 7.7)
+empty_array
+```
+
+
+
+
+    array([(0, 2.2), (1, 6.5), (2, 1.1), (3, 7.7)], 
+          dtype=[('index', '<i8'), ('distance', '<f8')])
+
+
+
+By naming each element in the list of tuples, we can index `empty_array` to only access specific elements by their `fieldname`. 
+
+The result is 1-dimensional array.
+
+
+```python
+empty_array["index"]
+```
+
+
+
+
+    array([0, 1, 2, 3])
+
+
+
+
+```python
+empty_array["distance"]
+```
+
+
+
+
+    array([ 2.2,  6.5,  1.1,  7.7])
+
+
+
+With this knowledge in our pocket, let's create `get_distance()`.
+
+
+```python
+def get_distances(x):
+    """
+    Calculate the Euclidean distance between the input array and every other vector in our training set
+    """
+    custom_dtype = np.dtype([("index", "int"), ("distance", "float64")])
+    
+    distances = np.zeros(len(X_train), dtype=custom_dtype)
+    
+    for ind, val in enumerate(X_train):
+        dist_to_val = euc(x, val)
+        distances[ind] = (ind, dist_to_val)
+    
+    return distances
+
+```
+
+
+```python
+distances = get_distances(X_test[0])
+```
+
+
+```python
+distances[:10]
+```
+
+
+
+
+    array([(0, 0.31622776601683816), (1, 4.611941023040083),
+           (2, 1.1180339887498942), (3, 3.2695565448543626),
+           (4, 0.3162277660168373), (5, 5.923681287847955),
+           (6, 3.661966684720111), (7, 3.9509492530276824),
+           (8, 0.5099019513592781), (9, 2.1633307652783933)], 
+          dtype=[('index', '<i8'), ('distance', '<f8')])
+
+
+
+
+```python
+distances["index"][:10]
+```
+
+
+
+
+    array([0, 1, 2, 3, 4, 5, 6, 7, 8, 9])
+
+
+
+
+```python
+distances["distance"][:10]
+```
+
+
+
+
+    array([ 0.31622777,  4.61194102,  1.11803399,  3.26955654,  0.31622777,
+            5.92368129,  3.66196668,  3.95094925,  0.50990195,  2.16333077])
+
+
+
+## Identifying K Nearest Neighbors
+
+Now that we have our distances between `X_test[0]` and every vector in `X_train`, let's limit the results to only those that are most like `X_test[0]` (i.e. those with the smallest distances are more similar; those with larger distances are less similar)
+
+
+```python
+empty_array.sort(order="distance")
+empty_array
+```
+
+
+
+
+    array([(2, 1.1), (0, 2.2), (1, 6.5), (3, 7.7)], 
+          dtype=[('index', '<i8'), ('distance', '<f8')])
+
+
+
+### Sorting a list of tuples by `fieldname`
+
+Because `distances` is an array with a list of named tuples, we can use [`np.sort()`](https://docs.scipy.org/doc/numpy/reference/generated/numpy.sort.html) to return a sorted copy of `distances` by the values in one or more `fieldname`'s. In this case, we want `distances` that are closest to zero.
+
+As is, `np.sort()` returns a copy of the array in ascending order. By supplying `k`, we can limit the number of distances returned.
+
+
+```python
+def get_k_nearest(dists, k=3):
+    """
+    Identifiy the K nearest neighbors to the vector we want to predict
+    """
+    dists.sort(order="distance")
+    return dists[:k]
+```
+
+
+```python
+k_nearest = get_k_nearest(dists=distances)
+```
+
+
+```python
+k_nearest
+```
+
+
+
+
+    array([(70, 0.29999999999999954), (51, 0.2999999999999998),
+           (4, 0.3162277660168373)], 
+          dtype=[('index', '<i8'), ('distance', '<f8')])
+
+
+
+## Identifying the majority label our `k_nearest` elements share in common
+
+Remember, each element in `k_nearest` is a tuple: the 1st element in the index from the `X_train` vector and the 2nd element is the distance between `X_test[0]` and that particular vector.
+
+
+```python
+note = "The y_train values at index {} are {}, {} and {}.".format(list(k_nearest["index"]),
+                                                                 y_train[70],
+                                                                 y_train[51],
+                                                                 y_train[4])
+print(note)
+```
+
+    The y_train values at index [70, 51, 4] are 0, 0 and 0.
+
+
+Let's build a function that subsets `y_train` to only those labels that share the same `index` values in `k_nearest`. 
+
+Afterwards, obtain the total counts for each label by using [`np.bincount()`](https://docs.scipy.org/doc/numpy/reference/generated/numpy.bincount.html). Since we're interested in the label that is shared by the majority of elements in `k_nearest`, keep only the label with the highest overall count in counts by using [`np.argmax()`](https://docs.scipy.org/doc/numpy/reference/generated/numpy.argmax.html).
+
+
+```python
+k_nearest_list_index = list(k_nearest["index"])
+k_nearest_list_index
+```
+
+
+
+
+    [70, 51, 4]
+
+
+
+
+```python
+labels = [y_train[i] for i in k_nearest_list_index]
+labels
+```
+
+
+
+
+    [0, 0, 0]
+
+
+
+
+```python
+counts = np.bincount(labels)
+counts
+```
+
+
+
+
+    array([3])
+
+
+
+
+```python
+np.argmax(counts)
+```
+
+
+
+
+    0
+
+
+
+
+```python
+def get_label_prediction(k_nearest):
+    """
+    Identify which label the majority of the K nearest neighbors share
+    """
+    k_nearest_list_index = list(k_nearest["index"])
+    labels = [y_train[i] for i in k_nearest_list_index]
+    counts = np.bincount(labels)
+    
+    return np.argmax(counts)
+```
+
+
+```python
+prediction = get_label_prediction(k_nearest)
+prediction
+```
+
+
+
+
+    0
+
+
 
 ## Summary
 
-That was great! In what's next, you'll dive a little deeper into evaluating performance of a KNN algorithm!
+Thanks for reading along! It's always good to break things and learn how to solve problems in another way. The cool thing about the knowing how to solve something one way is that you have a roadmap to follow as you're experimenting.
